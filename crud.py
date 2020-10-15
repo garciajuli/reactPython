@@ -22,6 +22,8 @@ def get_movie(db: Session, movie_id: int):
 def get_movies(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Movie).offset(skip).limit(limit).all()
 
+def get_allMovies(db: Session):
+    return db.query(models.Movie).all()
 
 def get_star(db: Session, star_id: int):
     # read from the database (get method read from cache)
@@ -192,7 +194,7 @@ def update_movie_actor(db: Session, movie_id: int, actors_id: List[int]):
             return None
         db_stars.append(actor)
 
-    if db_movie is None or db_stars is None:
+    if db_movie is None :
         return None
     # update object association
     db_movie.actors = db_stars
@@ -229,4 +231,26 @@ def get_movie_stat_director(db: Session, min_count: int ):
     .order_by(desc("count_movies"))\
     .all()
 
+    return result_query
+
+def get_count_movie_by_actor(db: Session, min_count: int ):
+    
+    result_query =  db.query(models.Star,
+        func.count(models.Movie.id).label("count_movies"))\
+    .join(models.Movie.actors)\
+    .group_by(models.Star)\
+    .having(func.count(models.Movie.id) >= min_count)\
+    .order_by(desc("count_movies"))\
+    .all()
+
+    return result_query
+
+def get_stat_movie_by_actor(db: Session,min_count: int):
+    
+    result_query =  db.query(models.Star,
+        func.min(models.Movie.year),func.max(models.Movie.year), func.count(models.Movie.id))\
+    .join(models.Movie.actors)\
+    .group_by(models.Star)\
+    .having(func.count(models.Movie.id) >= min_count)\
+    .all()
     return result_query

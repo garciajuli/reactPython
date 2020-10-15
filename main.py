@@ -32,6 +32,13 @@ def read_movies(skip: Optional[int] = 0, limit: Optional[int] = 100, db: Session
     # return them as json
     return movies
 
+@app.get("/movies/all", response_model=List[schemas.Movie])
+def read_allMovies( db: Session = Depends(get_db)):
+    # read items from database
+    movies = crud.get_allMovies(db)
+    # return them as json
+    return movies
+
 @app.get("/movies/by_id/{movie_id}", response_model=schemas.MovieDetail)
 def read_movie(movie_id: int, db: Session = Depends(get_db)):
     db_movie = crud.get_movie(db, movie_id=movie_id)
@@ -67,7 +74,7 @@ def read_movie_by_title(searchTitle: Optional[str] = None, db: Session = Depends
 @app.get("/movie/by_partTitle", response_model=List[schemas.Movie])
 def read_movie_by_partTitle(searchTitle: Optional[str] = None, db: Session = Depends(get_db)):
     # read movie from database
-    movie = crud.get_movies_by_title(db=db, title=searchTitle)
+    movie = crud.get_movies_by_parttitle(db=db, title=searchTitle)
     # return them as json
     return movie
 
@@ -217,3 +224,12 @@ def read_movie_stat_duration(db: Session = Depends(get_db)) -> Dict:
 @app.get("/stars/stat_movie_by_director/")
 def read_movie_stat_director(min_count: Optional[int] = 10, db: Session = Depends(get_db)):
     return crud.get_movie_stat_director(min_count = min_count,db=db)
+
+
+@app.get("/stars/stat_count_movie_by_actor/")
+def get_count_movie_by_actor(min_count: Optional[int] = 10, db: Session = Depends(get_db)):
+    return crud.get_count_movie_by_actor(min_count = min_count,db=db)
+
+@app.get("/stars/stat_movies")
+def get_stat_movie_by_actor(min_count: Optional[int] = 10,db: Session = Depends(get_db)):
+    return crud.get_stat_movie_by_actor(db=db, min_count=min_count)
