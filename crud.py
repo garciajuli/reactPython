@@ -6,6 +6,7 @@ manage CRUD and adapt model data from db to schema data to api rest
 from typing import Optional, List
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, extract, between
+from sqlalchemy import func
 from fastapi.logger import logger
 import models, schemas
 
@@ -183,7 +184,14 @@ def add_movie_actor(db: Session, movie_id: int, actor_id: int):
 
 def update_movie_actor(db: Session, movie_id: int, actors_id: List[int]):
     db_movie = get_movie(db=db, movie_id=movie_id)
-    db_stars =  [get_star(db=db, star_id=actor_id) for actor_id in actors_id]
+    # db_stars =  [get_star(db=db, star_id=actor_id) for actor_id in actors_id]
+    db_stars =  [] 
+    for actor_id in actors_id:
+        actor = get_star(db=db, star_id=actor_id)
+        if actor is None:
+            return None
+        db_stars.append(actor)
+
     if db_movie is None or db_stars is None:
         return None
     # update object association
@@ -192,3 +200,33 @@ def update_movie_actor(db: Session, movie_id: int, actors_id: List[int]):
     db.commit()
     # return updated object
     return db_movie
+
+
+def get_movies_count_by_year(db: Session):
+    return db.query(models.Movie.year,func.count()) \
+    .group_by(models.Movie.year)\
+    .order_by(models.Movie.year)\
+    .all()
+
+def get_movies_stat_duration(db: Session):
+    result_query =  db.query(models.Movie.year,
+        func.max(models.Movie.duration).label("max_duration"),
+        func.min(models.Movie.duration).label("min_duration"),
+        func.avg(models.Movie.duration).label("mean_duration")) \
+    .group_by(models.Movie.year)\
+    .order_by(models.Movie.year)\
+    .all()
+
+    return [{'year' : year,'min_duration':minduration, 'max_duration' : maxduration, 'mean_duration' : mean_duration} for year,minduration,maxduration,mean_duration in result_query]
+
+def get_movie_stat_director(db: Session, min_count: int ):
+    
+    result_query =  db.query(models.Star,
+        func.count(models.Movie.id).label("count_movies"))\
+    .join(models.Movie.director)\
+    .group_by(models.Star)\
+    .having(func.count(models.Movie.id) >= min_count)\
+    .order_by(desc("count_movies"))\
+    .all()
+
+    return result_query

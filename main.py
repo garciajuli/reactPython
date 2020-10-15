@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Tuple, Dict
 import logging
 
 from fastapi import Depends, FastAPI, HTTPException
@@ -203,3 +203,17 @@ def update_movie_actors(mid: int, sids: List[int], db: Session = Depends(get_db)
     if db_movie is None:
         raise HTTPException(status_code=404, detail="Movie or Star not found or star already in actors")
     return db_movie
+
+
+@app.get("/movies/count_by_year/")
+def count_movie_by_year(db: Session = Depends(get_db)) -> List[Tuple[int,int]]:
+    return crud.get_movies_count_by_year(db=db)
+
+@app.get("/movies/stat_duration/")
+def read_movie_stat_duration(db: Session = Depends(get_db)) -> Dict:
+    return crud.get_movies_stat_duration(db=db)
+
+
+@app.get("/stars/stat_movie_by_director/")
+def read_movie_stat_director(min_count: Optional[int] = 10, db: Session = Depends(get_db)):
+    return crud.get_movie_stat_director(min_count = min_count,db=db)
